@@ -67,12 +67,14 @@ const Login = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8 }}
-            className="flex items-center gap-3 mb-10"
+            className="mb-10"
           >
-            <div className="bg-white/80 p-2.5 rounded-2xl backdrop-blur-xl border border-white shadow-sm ring-1 ring-black/[0.05]">
-              <img src={logo} alt="ConfirmIT" className="h-9 w-9" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-black/90">ConfirmIT</span>
+            <Link to="/" className="inline-flex items-center gap-3 group">
+              <div className="bg-white/80 p-2.5 rounded-2xl backdrop-blur-xl border border-white shadow-sm ring-1 ring-black/[0.05] group-hover:scale-105 transition-transform">
+                <img src={logo} alt="ConfirmIT" className="h-9 w-9" />
+              </div>
+              <span className="text-2xl font-bold tracking-tight text-black/90 group-hover:opacity-80 transition-opacity">ConfirmIT</span>
+            </Link>
           </motion.div>
           
           <motion.h1 
@@ -104,8 +106,12 @@ const Login = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[420px] space-y-10"
+          className="w-full max-w-[420px] space-y-8"
         >
+          <Link to="/" className="inline-flex items-center text-sm font-semibold text-[#86868B] hover:text-[#1D1D1F] transition-colors mb-4">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Back to Home
+          </Link>
           <div className="text-left space-y-2">
             <h2 className="text-[34px] font-bold tracking-tight text-[#1D1D1F]">Sign In</h2>
             <p className="text-[17px] text-[#86868B] font-medium leading-relaxed">
