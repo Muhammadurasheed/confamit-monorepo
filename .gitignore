@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Hackathon and Internal Documents
+claude_suggestion.txt
+Confirmit Pitch Deck(standard).pptx
+CONFIRMIT_DEMO_PITCH_SCRIPT.md
+CONTRIBUTING.md
+demo.md
+FIREBASE_RULES.md
+Innovation Synopsis.docx
+NFT_AND_HEDERA_EXPLAINED.md
+synopsis.txt
+the_hedera_hackathon.txt
