@@ -103,30 +103,30 @@ const PaymentSelection = () => {
         businessName,
         tier,
       },
-      callback: async (response: any) => {
+      callback: (response: any) => {
         // Payment successful — verify on the backend and redirect
         toast.success("Payment received! Verifying...");
         setPaymentStatus('confirming');
 
-        try {
-          const verifyResponse = await paymentService.verifyPayment({
-            businessId: businessId!,
-            paymentMethod: 'paystack',
-            reference: response.reference,
-          });
-
+        paymentService.verifyPayment({
+          businessId: businessId!,
+          paymentMethod: 'paystack',
+          reference: response.reference,
+        }).then((verifyResponse) => {
           if (verifyResponse.success) {
             toast.success("Payment verified! Redirecting to your dashboard...");
             setPaymentStatus('success');
             navigate(`/business/dashboard/${businessId}`);
           } else {
-            throw new Error(verifyResponse.message || "Verification failed");
+            toast.error(verifyResponse.message || "Verification failed");
+            setPaymentStatus('failed');
+            setIsLoading(false);
           }
-        } catch (error) {
+        }).catch((error) => {
           toast.error(error instanceof Error ? error.message : "Payment verification failed");
           setPaymentStatus('failed');
           setIsLoading(false);
-        }
+        });
       },
       onClose: () => {
         setIsLoading(false);
