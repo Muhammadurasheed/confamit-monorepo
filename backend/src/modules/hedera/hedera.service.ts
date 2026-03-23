@@ -308,21 +308,25 @@ export class HederaService {
       const metadataJson = JSON.stringify(metadata, null, 2);
       const base64Data = Buffer.from(metadataJson).toString('base64');
 
-      this.logger.log(`Uploading HIP-412 metadata for business: ${businessId}`);
+      // Use a SHORT public_id to keep the final URL under Hedera's 100-byte metadata limit
+      // Hedera HTS enforces max 100 bytes for NFT metadata field
+      const shortId = crypto.createHash('md5').update(businessId).digest('hex').substring(0, 8);
 
-      // Upload as raw JSON file to Cloudinary
+      this.logger.log(`Uploading HIP-412 metadata for business: ${businessId} (shortId: ${shortId})`);
+
+      // Upload as raw JSON file to Cloudinary with minimal path
       const result = await cloudinary.uploader.upload(
         `data:application/json;base64,${base64Data}`,
         {
-          folder: 'confirmit/nft-metadata',
-          public_id: `trust-id-${businessId}`,
+          folder: 'cit',
+          public_id: shortId,
           resource_type: 'raw',
           format: 'json',
-          overwrite: true, // Allow updates
+          overwrite: true,
         },
       );
 
-      this.logger.log(`✅ Metadata uploaded: ${result.secure_url}`);
+      this.logger.log(`✅ Metadata uploaded: ${result.secure_url} (${Buffer.from(result.secure_url).length} bytes)`);
       return result.secure_url;
     } catch (error) {
       this.logger.error(`Metadata upload failed: ${error.message}`);
@@ -368,7 +372,16 @@ export class HederaService {
       );
 
       // Create metadata buffer with URI (HIP-412 standard)
-      const metadataBuffer = Buffer.from(metadataUri);
+      // Hedera HTS enforces a strict 100-byte limit on NFT metadata
+      let metadataBuffer = Buffer.from(metadataUri);
+      if (metadataBuffer.length > 100) {
+        this.logger.warn(`⚠️ Metadata URI is ${metadataBuffer.length} bytes (limit: 100). Attempting to shorten...`);
+        // Strip version segment from Cloudinary URL to save bytes
+        // e.g., /v1234567890/ -> /
+        const shortened = metadataUri.replace(/\/v\d+\//, '/');
+        metadataBuffer = Buffer.from(shortened);
+        this.logger.log(`Shortened URI: ${shortened} (${metadataBuffer.length} bytes)`);
+      }
 
       this.logger.log(`NFT metadata URI: ${metadataUri} (${metadataBuffer.length} bytes)`);
 
