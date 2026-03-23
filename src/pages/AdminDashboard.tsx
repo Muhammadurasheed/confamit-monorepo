@@ -20,6 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle, XCircle, Eye, Building2, Clock, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 import { API_ENDPOINTS } from "@/lib/constants";
 import { BusinessDetailsModal } from "@/components/features/admin/BusinessDetailsModal";
 import { suspendBusiness, deleteBusiness } from "@/services/business";
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [suspensionReason, setSuspensionReason] = useState("");
   const [processing, setProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<string>("");
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -126,9 +128,13 @@ export default function AdminDashboard() {
     if (!selectedBusiness) return;
 
     setProcessing(true);
+    setProcessingStep("Anchoring verification to Hedera HCS...");
+    
     try {
       const token = await user?.getIdToken();
 
+      // Step 1: Request approval (the backend handles HCS + NFT sequentially)
+      // We simulate the progress text since the backend does both in one call
       const response = await fetch(
         `${API_ENDPOINTS.ADMIN_BUSINESSES}/approve/${selectedBusiness.business_id}`,
         {
@@ -143,6 +149,8 @@ export default function AdminDashboard() {
         }
       );
 
+      setProcessingStep("Finalizing Trust ID NFT minting...");
+
       if (!response.ok) throw new Error("Approval failed");
 
       const result = await response.json();
@@ -150,6 +158,13 @@ export default function AdminDashboard() {
       // Handle both success cases: with or without NFT
       if (result.nft?.serial_number) {
         toast.success(`Business approved! Trust ID NFT #${result.nft.serial_number} minted.`);
+        // 🎉 CELEBRATION: Top-tier confetti effect
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#22c55e', '#3b82f6', '#fbbf24']
+        });
       } else {
         toast.success('Business approved successfully!');
         if (result.warning) {
@@ -165,6 +180,7 @@ export default function AdminDashboard() {
       toast.error("Failed to approve business");
     } finally {
       setProcessing(false);
+      setProcessingStep("");
     }
   };
 
@@ -380,8 +396,13 @@ export default function AdminDashboard() {
                         setSelectedBusiness(business);
                         setShowApproveDialog(true);
                       }}
+                      disabled={processing && selectedBusiness?.business_id === business.business_id}
                     >
-                      <CheckCircle className="h-4 w-4 mr-2" />
+                      {processing && selectedBusiness?.business_id === business.business_id ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                      )}
                       Approve
                     </Button>
                     <Button
@@ -504,11 +525,11 @@ export default function AdminDashboard() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={processing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleApprove} disabled={processing}>
+            <AlertDialogAction onClick={handleApprove} disabled={processing} className="min-w-[140px]">
               {processing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Approving...
+                  {processingStep || "Processing..."}
                 </>
               ) : (
                 "Approve & Mint NFT"
