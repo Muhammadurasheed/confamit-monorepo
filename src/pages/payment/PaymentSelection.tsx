@@ -10,8 +10,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PaymentMethodCard } from "@/components/features/payment/PaymentMethodCard";
 import { usePaymentStore } from "@/store/paymentStore";
 import { paymentService } from "@/services/payment";
-import { BUSINESS_TIERS } from "@/lib/constants";
+import { BUSINESS_TIERS, PAYSTACK_CONFIG } from "@/lib/constants";
 import { useAuth } from "@/hooks/useAuth";
+
+// Declare global window property for TypeScript
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
 
 const PaymentSelection = () => {
   const navigate = useNavigate();
@@ -70,29 +77,65 @@ const PaymentSelection = () => {
       return;
     }
 
+    if (!window.PaystackPop) {
+      toast.error("Paystack SDK not loaded. Please refresh the page.");
+      return;
+    }
+
+    if (!pricing) {
+      toast.error("Pricing not loaded yet.");
+      return;
+    }
+
     setIsLoading(true);
     setPaymentMethod('paystack');
     setPaymentStatus('initializing');
 
-    try {
-      const response = await paymentService.initializePaystackPayment({
-        businessId: businessId!,
-        email: user.email,
+    // Use inline popup (same proven pattern as the Escrow flow)
+    const handler = window.PaystackPop.setup({
+      key: PAYSTACK_CONFIG.publicKey,
+      email: user.email,
+      amount: pricing.ngn * 100, // Paystack expects kobo
+      currency: "NGN",
+      ref: `BIZ-${businessId}-${Date.now()}`,
+      metadata: {
+        businessId,
+        businessName,
         tier,
-      });
+      },
+      callback: async (response: any) => {
+        // Payment successful — verify on the backend and redirect
+        toast.success("Payment received! Verifying...");
+        setPaymentStatus('confirming');
 
-      if (response.success && response.authorization_url) {
-        // Redirect to Paystack checkout
-        window.location.href = response.authorization_url;
-      } else {
-        throw new Error("Failed to initialize payment");
-      }
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Payment initialization failed");
-      setPaymentStatus('failed');
-    } finally {
-      setIsLoading(false);
-    }
+        try {
+          const verifyResponse = await paymentService.verifyPayment({
+            businessId: businessId!,
+            paymentMethod: 'paystack',
+            reference: response.reference,
+          });
+
+          if (verifyResponse.success) {
+            toast.success("Payment verified! Redirecting to your dashboard...");
+            setPaymentStatus('success');
+            navigate(`/business/dashboard/${businessId}`);
+          } else {
+            throw new Error(verifyResponse.message || "Verification failed");
+          }
+        } catch (error) {
+          toast.error(error instanceof Error ? error.message : "Payment verification failed");
+          setPaymentStatus('failed');
+          setIsLoading(false);
+        }
+      },
+      onClose: () => {
+        setIsLoading(false);
+        setPaymentStatus('failed');
+        toast.error("Payment cancelled.");
+      },
+    });
+
+    handler.openIframe();
   };
 
 
