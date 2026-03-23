@@ -89,92 +89,93 @@ export const ViewFraudReportsModal = ({ open, onOpenChange, accountNumber, repor
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Summary Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg border bg-destructive/5 border-destructive/20">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4 text-destructive" />
-                <span className="text-sm font-medium">Total Reports</span>
+        <ScrollArea className="max-h-[calc(80vh-120px)] pr-4 overflow-x-hidden">
+          <div className="space-y-6 pb-6">
+            {/* Summary Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-lg border bg-destructive/5 border-destructive/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="h-4 w-4 text-destructive" />
+                  <span className="text-sm font-medium">Total Reports</span>
+                </div>
+                <p className="text-3xl font-bold text-destructive">{reports.total}</p>
               </div>
-              <p className="text-3xl font-bold text-destructive">{reports.total}</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-warning/5 border-warning/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-warning" />
-                <span className="text-sm font-medium">Last 30 Days</span>
+              <div className="p-4 rounded-lg border bg-warning/5 border-warning/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-warning" />
+                  <span className="text-sm font-medium">Last 30 Days</span>
+                </div>
+                <p className="text-3xl font-bold text-warning">{reports.recent_30_days}</p>
               </div>
-              <p className="text-3xl font-bold text-warning">{reports.recent_30_days}</p>
             </div>
-          </div>
 
-          {/* Report Categories */}
-          {reports.categories && reports.categories.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="font-semibold">Common Scam Patterns</h4>
-              <div className="flex flex-wrap gap-2">
-                {reports.categories.map((cat, index) => (
-                  <Badge key={index} variant="outline" className="gap-2">
-                    <span>{cat.type}</span>
-                    <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                      {cat.count}
-                    </span>
-                  </Badge>
-                ))}
+            {/* Report Categories */}
+            {reports.categories && reports.categories.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold px-1">Common Scam Patterns</h4>
+                <div className="flex flex-wrap gap-2">
+                  {reports.categories.map((cat, index) => (
+                    <Badge key={index} variant="outline" className="gap-2 bg-background/50">
+                      <span>{cat.type}</span>
+                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">
+                        {cat.count}
+                      </span>
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Recent Reports */}
-          <div className="space-y-2">
-            <h4 className="font-semibold">Recent Reports (Anonymized)</h4>
-            {loading ? (
-              <div className="flex items-center justify-center h-[300px]">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : detailedReports.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                No detailed reports available
-              </div>
-            ) : (
-              <ScrollArea className="h-[300px] pr-4">
+            {/* Recent Reports */}
+            <div className="space-y-3">
+              <h4 className="font-semibold px-1">Recent Reports (Anonymized)</h4>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary opacity-50" />
+                </div>
+              ) : detailedReports.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-xl border border-dashed">
+                  No detailed reports available
+                </div>
+              ) : (
                 <div className="space-y-3">
                   {detailedReports.map((report) => (
                     <div
                       key={report.id}
-                      className="p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                      className="p-4 rounded-[16px] border bg-card hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <Badge variant={getSeverityColor(report.severity)}>
+                        <Badge variant={getSeverityColor(report.severity)} className="capitalize">
                           {report.severity} risk
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
                           {format(new Date(report.reported_at), "MMM d, yyyy")}
                         </span>
                       </div>
-                      <p className="font-medium mb-1">{report.category}</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      <p className="font-bold text-[15px] mb-1 text-foreground">{report.category}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         {report.description || report.pattern}
                       </p>
                       {report.verified && (
-                        <Badge variant="outline" className="mt-2">
+                        <div className="flex items-center gap-1.5 mt-3 text-[10px] font-bold text-primary uppercase tracking-widest">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                           Verified Report
-                        </Badge>
+                        </div>
                       )}
                     </div>
                   ))}
                 </div>
-              </ScrollArea>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Disclaimer */}
-          <div className="p-4 rounded-lg bg-muted/50 border border-muted">
-            <p className="text-xs text-muted-foreground">
-              <strong>Note:</strong> All reports are anonymized to protect user privacy. Reports are verified by our system before being counted. Similar account patterns are analyzed to detect fraud networks.
-            </p>
+            {/* Disclaimer */}
+            <div className="p-4 rounded-[16px] bg-muted/50 border border-muted/50">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong>Note:</strong> All reports are anonymized to protect user privacy. Reports are verified by our system before being counted. Similar account patterns are analyzed to detect fraud networks.
+              </p>
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
