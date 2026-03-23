@@ -238,7 +238,7 @@ export default function CreateEscrow() {
               transition={{ duration: 0.8 }}
             >
               <Badge variant="outline" className="mb-6 bg-white shadow-sm border-black/[0.05] text-[#007AFF] px-4 py-1.5 text-sm font-semibold rounded-full tracking-tight">
-                <Fingerprint className="w-4 h-4 mr-2" /> Hedera Native Settlement
+                <Fingerprint className="w-4 h-4 mr-2" /> Payment Settlement
               </Badge>
               <h1 className="text-[52px] md:text-[64px] font-bold leading-[1.05] tracking-tight text-[#1D1D1F] mb-8">
                 The Standard for <br />
