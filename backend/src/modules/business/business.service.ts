@@ -298,7 +298,33 @@ export class BusinessService {
         business.verification.tier,
       );
 
-      // Mint Trust ID NFT on Hedera (with graceful error handling)
+      // 1. Anchor Approval Event to HCS (Audit Trail)
+      // This creates a permanent, immutable record of WHO approved WHAT and WHEN.
+      let hcsAudit: any = null;
+      try {
+        const auditData = {
+          action: 'BUSINESS_VERIFICATION_APPROVED',
+          business_id: businessId,
+          business_name: business.name,
+          tier: business.verification.tier,
+          trust_score: initialTrustScore,
+          approved_by: approvedBy,
+          timestamp: new Date().toISOString(),
+        };
+
+        const memo = `[ConfirmIT] VERIFIED: ${business.name} (Tier ${business.verification.tier})`;
+
+        hcsAudit = await this.hederaService.anchorToHCS(
+          `VERIFY_${businessId}`,
+          auditData,
+          memo,
+        );
+        this.logger.log(`✅ Business approval anchored to HCS: ${hcsAudit.transaction_id}`);
+      } catch (error) {
+        this.logger.error(`⚠️ HCS anchoring failed (non-critical): ${error.message}`);
+      }
+
+      // 2. Mint Trust ID NFT on Hedera (Cross-linked with HCS Audit)
       let nftData: any = null;
       let nftError: string | null = null;
       
@@ -308,6 +334,7 @@ export class BusinessService {
           business.name,
           initialTrustScore,
           business.verification.tier,
+          hcsAudit?.transaction_id, // Link to HCS audit trail!
         );
         this.logger.log(`✅ Trust ID NFT minted successfully for business: ${businessId}`);
       } catch (error) {
@@ -338,6 +365,11 @@ export class BusinessService {
             serial_number: nftData.serial_number,
             explorer_url: nftData.explorer_url,
           },
+          hcs_audit_trail: hcsAudit?.transaction_id || null, // Preserve HCS link in Firestore
+        };
+      } else if (hcsAudit) {
+        updateData.hedera = {
+          hcs_audit_trail: hcsAudit.transaction_id,
         };
       }
 

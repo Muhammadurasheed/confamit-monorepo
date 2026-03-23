@@ -232,6 +232,7 @@ export class HederaService {
     businessName: string,
     trustScore: number,
     tier: number,
+    hcsAuditTxId?: string,
   ): any {
     // Default logo if none provided
     const defaultLogo = 'https://res.cloudinary.com/dlmrufbme/image/upload/v1732000000/confirmit/confirmit-logo.png';
@@ -244,7 +245,7 @@ export class HederaService {
 
     // Build description
     const category = businessData?.category || 'business';
-    const description = `${businessName} is a verified ${category} on ConfirmIT with a trust score of ${trustScore}/100. This Trust ID NFT represents blockchain-verified business credentials on the Hedera network.`;
+    const description = `${businessName} (ID: ${businessId}) is a verified ${category} on the ConfirmIT Trust Network. ${hcsAuditTxId ? `Verified under HCS Audit log: ${hcsAuditTxId}.` : ''} Total Trust Score: ${trustScore}/100. This Trust ID NFT represents blockchain-validated business credentials on Hedera.`;
 
     return {
       name: `ConfirmIT Trust ID - ${businessName}`,
@@ -282,14 +283,23 @@ export class HederaService {
         },
         {
           trait_type: 'Network',
-          value: 'ConfirmIT',
+          value: 'ConfirmIT Trust Layer',
+        },
+        {
+          trait_type: 'Verification Method',
+          value: tier >= 3 ? 'Premium Multi-Factor Audit' : 'Standard Digital Verification',
+        },
+        {
+          trait_type: 'Security Authority',
+          value: 'ConfirmIT Decentralized Protocol',
         },
       ],
       properties: {
         business_id: businessId,
-        phone: businessData?.contact?.phone || null,
-        email: businessData?.contact?.email || null,
-        website: businessData?.contact?.website || null,
+        hcs_audit_trail: hcsAuditTxId || null,
+        phone_verified: !!businessData?.contact?.phone,
+        email_verified: !!businessData?.contact?.email,
+        payment_verified: true,
         network: 'ConfirmIT',
         verified: true,
       },
@@ -344,6 +354,7 @@ export class HederaService {
     businessName: string,
     trustScore: number,
     verificationTier: number,
+    hcsAuditTxId?: string,
   ): Promise<any> {
     this.logger.log(`Minting Trust ID NFT for business: ${businessId}`);
 
@@ -363,6 +374,7 @@ export class HederaService {
         businessName,
         trustScore,
         verificationTier,
+        hcsAuditTxId,
       );
 
       // Upload metadata to Cloudinary and get public URL
